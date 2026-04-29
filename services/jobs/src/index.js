@@ -63,7 +63,7 @@ app.use((err, _req, res, _next) => {
 connectDB()
   .then(() => {
     const PORT = process.env.PORT || 5002;
-    app.listen(PORT, () => console.log(`✅ Jobs service running on port ${PORT}`));
+    app.listen(PORT, "0.0.0.0", () => console.log(`✅ Jobs service running on port ${PORT}`));
   })
   .catch((err) => {
     console.error("Jobs DB connection error:", err.message);

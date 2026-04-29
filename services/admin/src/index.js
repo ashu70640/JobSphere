@@ -51,7 +51,7 @@ connectDatabases()
     // Seed superadmin if the Admin collection is empty
     await seedSuperAdmin(Admin);
 
-    app.listen(PORT, () =>
+    app.listen(PORT, "0.0.0.0", () =>
       console.log(`Admin service running on port ${PORT}`),
     );
   })

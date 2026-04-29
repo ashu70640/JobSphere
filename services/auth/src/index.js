@@ -66,7 +66,7 @@ app.use((err, _req, res, _next) => {
 connectDB()
   .then(() => {
     const PORT = process.env.PORT || 5001;
-    app.listen(PORT, () => console.log(`✅ Auth service running on port ${PORT}`));
+    app.listen(PORT, "0.0.0.0", () => console.log(`✅ Auth service running on port ${PORT}`));
   })
   .catch((err) => {
     console.error("Auth DB connection error:", err.message);
