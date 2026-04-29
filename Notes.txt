@@ -1,0 +1,2 @@
+Plan → Auth → Core Service (Jobs) → Frontend → Connect API → Add Features → Polish → Deploy
+

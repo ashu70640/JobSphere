@@ -1,0 +1,26 @@
+{
+  "name": "jobs",
+  "version": "1.0.0",
+  "description": "Jobs module",
+  "main": "nodemon index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon src/index.js"
+  },
+  "author": "Ashutosh",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "googleapis": "^144.0.0",
+    "helmet": "^8.0.0",
+    "ioredis": "^5.8.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.15.0",
+    "multer": "^2.1.0",
+    "nodemon": "^3.1.10",
+    "pdf-parse": "^1.1.1"
+  }
+}

@@ -1,0 +1,186 @@
+services:
+
+  # ── Auth Service ─────────────────────────────────────────────────────────────
+  auth-service:
+    build: ./services/auth
+    expose:
+      - "5001"
+    env_file:
+      - ./services/auth/.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - jobsphere-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5001/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout:  10s
+      retries:  3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  # ── Jobs Service ─────────────────────────────────────────────────────────────
+  jobs-service:
+    build: ./services/jobs
+    expose:
+      - "5002"
+    env_file:
+      - ./services/jobs/.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - jobsphere-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5002/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout:  10s
+      retries:  3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 768M
+
+  # ── Admin Service ─────────────────────────────────────────────────────────────
+  admin-service:
+    build: ./services/admin
+    expose:
+      - "5003"
+    env_file:
+      - ./services/admin/.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - jobsphere-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5003/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout:  10s
+      retries:  3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+
+  # ── MongoDB ──────────────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    networks:
+      - jobsphere-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout:  15s
+      retries:  5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    command: >
+      mongod
+      --wiredTigerCacheSizeGB 0.5
+      --bind_ip_all
+
+  # ── Redis ─────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: jobsphere-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - jobsphere-network
+    restart: unless-stopped
+    # maxmemory + LRU eviction; allkeys-lru removes least-recently-used keys under pressure
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 320M
+
+  # ── React / Vite Client ───────────────────────────────────────────────────────
+  client:
+    build: ./client
+    expose:
+      - "5173"
+    networks:
+      - jobsphere-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5173"]
+      interval: 30s
+      timeout:  15s
+      retries:  5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  # ── Nginx ─────────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: jobsphere-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      jobs-service:
+        condition: service_healthy
+      client:
+        condition: service_healthy
+    networks:
+      - jobsphere-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout:  5s
+      retries:  3
+
+volumes:
+  mongo-data:
+  mongo-config:
+
+networks:
+  jobsphere-network:
+    driver: bridge
