@@ -1,34 +1,32 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import BottomNav from "./BottomNav";
 
-/**
- * AppLayout — wraps every authenticated page.
- * Provides fixed sidebar + topbar + scrollable main content.
- *
- * Usage:
- *   <AppLayout title="Dashboard">
- *     {page content}
- *   </AppLayout>
- */
 export default function AppLayout({ title, children }) {
   return (
-    <div className="flex h-screen overflow-hidden
-                    bg-gray-50 dark:bg-gray-900
-                    transition-colors duration-200">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
 
-      {/* Fixed sidebar */}
-      <Sidebar />
+      {/* Sidebar — desktop only */}
+      <div className="hidden md:flex">
+        <Sidebar />
+      </div>
 
-      {/* Right column: topbar + scrollable content */}
+      {/* Main column */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Topbar title={title} />
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="px-6 py-6 lg:px-8 lg:py-8 max-w-screen-xl mx-auto">
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+          <div className="px-4 py-5 md:px-6 md:py-7 lg:px-8 lg:py-8 max-w-screen-xl mx-auto">
             {children}
           </div>
         </main>
       </div>
+
+      {/* Bottom nav — mobile only */}
+      <div className="md:hidden">
+        <BottomNav />
+      </div>
+
     </div>
   );
 }

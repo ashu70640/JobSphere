@@ -151,14 +151,11 @@ export default function InterviewCard({
   }
 
   // ── Full card variant: interviews page grid ──────────────────────────────────
+  const cardBase = "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 transition-shadow";
+  const cardHover = isCompleted ? "opacity-60" : "hover:shadow-md hover:border-violet-200 dark:hover:border-violet-700";
+
   return (
-    <div
-      className={`bg-white dark:bg-gray-800 border rounded-2xl p-5 transition-all duration-200
-                  ${isCompleted
-                    ? "border-gray-200 dark:border-gray-700 opacity-70"
-                    : "border-gray-200 dark:border-gray-700 hover:border-violet-200 dark:hover:border-violet-700 hover:shadow-md"
-                  }`}
-    >
+    <div className={`${cardBase} ${cardHover}`}>
       {/* Header: company info + urgency */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex items-center gap-3 min-w-0">
@@ -220,59 +217,51 @@ export default function InterviewCard({
       )}
 
       {/* Action bar */}
-      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-        {/* Mark Done — only when not already completed */}
+      <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+
         {!isCompleted && (
           <button
             onClick={() => onMarkComplete?.(job._id)}
-            className="flex items-center gap-1.5 text-xs font-medium
-                       text-emerald-700 dark:text-emerald-400
-                       bg-emerald-50 dark:bg-emerald-900/20
-                       hover:bg-emerald-100 dark:hover:bg-emerald-900/30
-                       px-3 py-1.5 rounded-lg transition-colors duration-150"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                       bg-emerald-50 text-emerald-700 hover:bg-emerald-100
+                       dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30
+                       transition-colors"
           >
-            <CheckIcon />
-            Done
+            <CheckIcon /> Done
           </button>
         )}
 
-        {/* Reschedule */}
         <button
           onClick={() => onReschedule?.(job)}
-          className="flex items-center gap-1.5 text-xs font-medium
-                     text-gray-600 dark:text-gray-300
-                     bg-gray-100 dark:bg-gray-700
-                     hover:bg-gray-200 dark:hover:bg-gray-600
-                     px-3 py-1.5 rounded-lg transition-colors duration-150"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                     bg-gray-100 text-gray-600 hover:bg-gray-200
+                     dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600
+                     transition-colors"
         >
-          <RefreshIcon />
-          Reschedule
+          <RefreshIcon /> Reschedule
         </button>
 
-        {/* Convert outcome — appears after marking done */}
         {isCompleted && (
-          <div className="flex gap-1.5 ml-auto">
+          <>
             <button
               onClick={() => onConvertStatus?.(job._id, "offer")}
-              className="text-xs font-medium
-                         text-emerald-700 dark:text-emerald-400
-                         bg-emerald-50 dark:bg-emerald-900/20
-                         hover:bg-emerald-100 dark:hover:bg-emerald-900/30
-                         px-3 py-1.5 rounded-lg transition-colors"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium
+                         bg-emerald-50 text-emerald-700 hover:bg-emerald-100
+                         dark:bg-emerald-900/20 dark:text-emerald-400
+                         transition-colors"
             >
               Got Offer
             </button>
             <button
               onClick={() => onConvertStatus?.(job._id, "declined")}
-              className="text-xs font-medium
-                         text-red-600 dark:text-red-400
-                         bg-red-50 dark:bg-red-900/20
-                         hover:bg-red-100 dark:hover:bg-red-900/30
-                         px-3 py-1.5 rounded-lg transition-colors"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium
+                         bg-red-50 text-red-600 hover:bg-red-100
+                         dark:bg-red-900/20 dark:text-red-400
+                         transition-colors"
             >
               Rejected
             </button>
-          </div>
+          </>
         )}
 
         {/* View link */}
