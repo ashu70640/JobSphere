@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config(); // Must run before reading process.env — fixes ESM import-order issue
+
 import Redis from "ioredis";
 
 const redisConfig = {
