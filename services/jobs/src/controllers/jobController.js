@@ -7,6 +7,7 @@ import {
   updateCalendarEvent,
   deleteCalendarEvent,
 } from "../services/calendarService.js";
+import { sendInterviewEmail, sendOfferEmail } from "../services/emailService.js";
 
 const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse");
@@ -61,6 +62,13 @@ export const createJob = async (req, res) => {
       job.calendarEventId = eventId;
       await job.save();
     }
+  }
+
+  // Email notification (best-effort, non-blocking)
+  if (status === "interview") {
+    sendInterviewEmail(req.user.userId, job).catch(() => {});
+  } else if (status === "offer") {
+    sendOfferEmail(req.user.userId, job).catch(() => {});
   }
 
   res.status(201).json({ job });
@@ -146,6 +154,7 @@ export const updateJob = async (req, res) => {
   if (!job) return res.status(404).json({ message: "Job not found" });
 
   const wasInterview = job.status === "interview";
+  const wasOffer     = job.status === "offer";
   const hadEventId   = job.calendarEventId;
 
   // Whitelist update fields to prevent mass assignment attacks
@@ -171,6 +180,14 @@ export const updateJob = async (req, res) => {
     await deleteCalendarEvent(req.user.userId, hadEventId);
     job.calendarEventId = "";
     await job.save();
+  }
+
+  // Email notifications on status change (best-effort, non-blocking)
+  const isNowOffer = job.status === "offer";
+  if (!wasInterview && isNowInterview) {
+    sendInterviewEmail(req.user.userId, job).catch(() => {});
+  } else if (!wasOffer && isNowOffer) {
+    sendOfferEmail(req.user.userId, job).catch(() => {});
   }
 
   res.status(200).json(job);

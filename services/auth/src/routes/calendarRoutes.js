@@ -16,6 +16,7 @@ import {
   disconnectCalendar,
   getCalendarTokensInternal,
 } from '../controllers/calendarController.js';
+import { getUserInternal } from '../controllers/authController.js';
 
 const router = express.Router();
 
@@ -27,11 +28,10 @@ router.patch('/toggle', authMiddleware, toggleCalendarSync);
 router.delete('/disconnect', authMiddleware, disconnectCalendar);
 
 // ── Internal (jobs service → auth service) ────────────────────────────────────
-// Mounted at /api/v1/auth/internal — so this resolves to /api/v1/auth/internal/tokens/:userId
-router.get(
-  '/tokens/:userId',
-  internalAuthMiddleware,
-  getCalendarTokensInternal,
-);
+// Mounted at /api/v1/auth/internal — so these resolve to:
+//   GET /api/v1/auth/internal/tokens/:userId
+//   GET /api/v1/auth/internal/user/:userId
+router.get('/tokens/:userId', internalAuthMiddleware, getCalendarTokensInternal);
+router.get('/user/:userId',   internalAuthMiddleware, getUserInternal);
 
 export default router;

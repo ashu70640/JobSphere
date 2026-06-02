@@ -7,9 +7,11 @@ services/auth/.env
 services/jobs/.env
 services/admin/.env
 
-# Frontend env (production URLs set in Render dashboard)
-client/.env
-client/.env.production
+# Frontend env
+client/.env              # local dev — empty VITE_* vars, uses Vite proxy
+client/.env.production   # default production build (auto-generated)
+client/.env.local        # personal local overrides
+# .env.render and .env.aws ARE committed — they contain no secrets, only public URLs
 
 # Build output
 client/dist/

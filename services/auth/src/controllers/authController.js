@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import redis from "../redis.js";
+import { sendWelcomeEmail } from "../services/emailService.js";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,9 @@ export const register = async (req, res) => {
 
     // Issue a short-lived access token (same as login for consistency)
     const accessToken = signAccess(user._id);
+
+    // Send welcome email — best-effort, never blocks the response
+    sendWelcomeEmail({ name: user.name, email: user.email }).catch(() => {});
 
     return res.status(201).json({
       message: "User registered successfully",
@@ -204,6 +208,21 @@ export const updateUser = async (req, res) => {
   } catch (err) {
     console.error("updateUser error:", err.message);
     res.status(500).json({ msg: "Server error" });
+  }
+};
+
+// ── GET /internal/user/:userId (inter-service) ─────────────────────────────────
+
+export const getUserInternal = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .select("name email")
+      .lean();
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ user });
+  } catch (err) {
+    console.error("getUserInternal error:", err.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
