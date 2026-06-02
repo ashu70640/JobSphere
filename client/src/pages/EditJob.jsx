@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
 import { API_JOBS } from "../utils/api";
+import { apiFetch } from "../utils/apiFetch";
 
 const INPUT_CLS = `w-full border border-gray-300 rounded-xl p-3 text-sm
                   focus:ring-2 focus:ring-blue-400 outline-none transition
@@ -144,11 +145,7 @@ const EditJob = () => {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const res  = await fetch(`${API_JOBS}/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        });
+        const res  = await apiFetch(`${API_JOBS}/${id}`);
         if (!res.ok) throw new Error("Failed to fetch job");
 
         const data = await res.json();
@@ -186,12 +183,9 @@ const EditJob = () => {
     setError(null);
 
     try {
-      const res = await fetch(`${API_JOBS}/${id}`, {
+      const res = await apiFetch(`${API_JOBS}/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
           interviewDate:  formData.interviewDate  || null,

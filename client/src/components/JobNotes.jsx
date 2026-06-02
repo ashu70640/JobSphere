@@ -1,39 +1,23 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { API_JOBS } from "../utils/api";
+import { apiFetch } from "../utils/apiFetch";
 
 const JobNotes = ({ job, setJob }) => {
     const [editingNoteId, setEditingNoteId] = useState(null);
     const [editedText, setEditedText] = useState("");
     const [newNote, setNewNote] = useState("");
 
-    const navigate = useNavigate();
-
     const handleAddNote = async () => {
         if (!newNote.trim()) return;
 
-        const token = localStorage.getItem("accessToken");
-
         try {
-            const res = await fetch(
-                `${API_JOBS}/${job._id}/notes`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ text: newNote }),
-                }
-            );
+            const res = await apiFetch(`${API_JOBS}/${job._id}/notes`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: newNote }),
+            });
 
             const data = await res.json();
-
-            if (res.status === 401 || res.status === 403) {
-                localStorage.removeItem("token");
-                navigate("/login");
-                return;
-            }
 
             if (res.ok) {
                 setJob(data.job);
@@ -51,26 +35,12 @@ const JobNotes = ({ job, setJob }) => {
 
         if (!confirmDelete) return;
 
-        const token = localStorage.getItem("accessToken");
-
         try {
-            const res = await fetch(
-                `${API_JOBS}/${job._id}/notes/${noteId}`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const res = await apiFetch(`${API_JOBS}/${job._id}/notes/${noteId}`, {
+                method: "DELETE",
+            });
 
             const data = await res.json();
-
-            if (res.status === 401 || res.status === 403) {
-                localStorage.removeItem("token");
-                navigate("/login");
-                return;
-            }
 
             if (res.ok) {
                 setJob(data.job);
@@ -83,28 +53,14 @@ const JobNotes = ({ job, setJob }) => {
     const handleUpdateNote = async (noteId) => {
         if (!editedText.trim()) return;
 
-        const token = localStorage.getItem("accessToken");
-
         try {
-            const res = await fetch(
-                `${API_JOBS}/${job._id}/notes/${noteId}`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ text: editedText }),
-                }
-            );
+            const res = await apiFetch(`${API_JOBS}/${job._id}/notes/${noteId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: editedText }),
+            });
 
             const data = await res.json();
-
-            if (res.status === 401 || res.status === 403) {
-                localStorage.removeItem("token");
-                navigate("/login");
-                return;
-            }
 
             if (res.ok) {
                 setJob(data.job);

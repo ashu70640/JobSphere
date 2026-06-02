@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AppLayout from "../components/layout/AppLayout";
 import { API_JOBS } from "../utils/api";
+import { apiFetch } from "../utils/apiFetch";
 
 import {
   BarChart,
@@ -25,14 +26,7 @@ const Stats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(
-          `${API_JOBS}/stats`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-            },
-          }
-        );
+        const res = await apiFetch(`${API_JOBS}/stats`);
 
         const data = await res.json();
         setStats(data);

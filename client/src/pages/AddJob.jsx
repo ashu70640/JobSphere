@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
 import { API_JOBS } from "../utils/api";
+import { apiFetch } from "../utils/apiFetch";
 
 const INPUT_CLS = `w-full border border-gray-300 rounded-xl p-3 text-sm
                   focus:ring-2 focus:ring-blue-400 outline-none transition
@@ -138,28 +139,16 @@ const AddJob = () => {
     setLoading(true);
     setError(null);
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) { navigate("/login"); return; }
-
     try {
-      const res = await fetch(API_JOBS, {
+      const res = await apiFetch(API_JOBS, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
           interviewDate:  formData.interviewDate  || null,
           interviewRound: Number(formData.interviewRound),
         }),
       });
-
-      if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem("accessToken");
-        navigate("/login");
-        return;
-      }
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to create job");

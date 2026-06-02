@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import CalendarConnect from "../components/CalendarConnect.jsx";
 import AppLayout from "../components/layout/AppLayout";
 import { API_AUTH } from "../utils/api";
+import { apiFetch } from "../utils/apiFetch";
 
 // ── Icons (inline SVG — no new libraries) ──────────────────────────────────────
 
@@ -160,11 +161,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`${API_AUTH}/me`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        });
+        const res = await apiFetch(`${API_AUTH}/me`);
         const data = await res.json();
         setUser(data.user);
       } catch (error) {
@@ -181,12 +178,9 @@ const Profile = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_AUTH}/updateUser`, {
+      const res = await apiFetch(`${API_AUTH}/updateUser`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user),
       });
 

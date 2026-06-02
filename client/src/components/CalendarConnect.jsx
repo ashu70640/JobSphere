@@ -98,15 +98,13 @@ const GoogleLogo = () => (
 // ─── Main component ───────────────────────────────────────────────────────────
 
 import { API_AUTH as API_BASE } from "../utils/api";
+import { apiFetch } from "../utils/apiFetch";
 
 export default function CalendarConnect() {
   const [status, setStatus]     = useState({ connected: false, enabled: false });
   const [loading, setLoading]   = useState(true);
   const [toggling, setToggling] = useState(false);
   const [toast, setToast]       = useState(null); // { type: 'success'|'error', msg }
-  const token = localStorage.getItem("accessToken");
-
-  const authHeaders = { Authorization: `Bearer ${token}` };
 
   // ── Show transient toast ────────────────────────────────────────────────────
   const showToast = (type, msg) => {
@@ -117,7 +115,7 @@ export default function CalendarConnect() {
   // ── Fetch current calendar status ───────────────────────────────────────────
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/calendar/status`, { headers: authHeaders });
+      const res = await apiFetch(`${API_BASE}/calendar/status`);
       if (!res.ok) throw new Error("Failed to fetch calendar status");
       const data = await res.json();
       setStatus(data);
@@ -126,7 +124,7 @@ export default function CalendarConnect() {
     } finally {
       setLoading(false);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── On mount: fetch status + handle redirect from Google ───────────────────
   useEffect(() => {
@@ -149,7 +147,7 @@ export default function CalendarConnect() {
   // ── Connect: redirect user to Google consent screen ────────────────────────
   const handleConnect = async () => {
     try {
-      const res = await fetch(`${API_BASE}/calendar/auth-url`, { headers: authHeaders });
+      const res = await apiFetch(`${API_BASE}/calendar/auth-url`);
       if (!res.ok) throw new Error("Could not get auth URL");
       const { url } = await res.json();
       window.location.href = url; // full-page redirect — standard OAuth flow
@@ -162,9 +160,9 @@ export default function CalendarConnect() {
   const handleToggle = async (enabled) => {
     setToggling(true);
     try {
-      const res = await fetch(`${API_BASE}/calendar/toggle`, {
+      const res = await apiFetch(`${API_BASE}/calendar/toggle`, {
         method: "PATCH",
-        headers: { ...authHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled }),
       });
       if (!res.ok) throw new Error("Toggle failed");
@@ -181,10 +179,7 @@ export default function CalendarConnect() {
   const handleDisconnect = async () => {
     if (!window.confirm("Disconnect Google Calendar? Future interviews won't sync.")) return;
     try {
-      const res = await fetch(`${API_BASE}/calendar/disconnect`, {
-        method: "DELETE",
-        headers: authHeaders,
-      });
+      const res = await apiFetch(`${API_BASE}/calendar/disconnect`, { method: "DELETE" });
       if (!res.ok) throw new Error("Disconnect failed");
       setStatus({ connected: false, enabled: false });
       showToast("success", "Google Calendar disconnected.");

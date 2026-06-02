@@ -6,6 +6,7 @@ import Pagination from "../components/Pagination";
 import FilterBar from "../components/FilterBar";
 import AppLayout from "../components/layout/AppLayout";
 import { API_JOBS } from "../utils/api";
+import { apiFetch } from "../utils/apiFetch";
 
 const STATUS_STYLES = {
   pending:   "bg-yellow-50  dark:bg-yellow-900/20  text-yellow-700 dark:text-yellow-400  border border-yellow-200 dark:border-yellow-800",
@@ -136,12 +137,9 @@ export default function Dashboard() {
   });
   const [meta, setMeta] = useState({ totalJobs: 0, numOfPages: 1 });
 
-  const token = () => localStorage.getItem("accessToken");
-
   // ── Fetch jobs ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    const t = token();
-    if (!t) { navigate("/login"); return; }
+    if (!localStorage.getItem("accessToken")) { navigate("/login"); return; }
 
     const fetchJobs = async () => {
       setLoading(true);
@@ -156,15 +154,9 @@ export default function Dashboard() {
       });
 
       try {
-        const res = await fetch(
-          `${API_JOBS}${params.toString() ? `?${params}` : ""}`,
-          { headers: { Authorization: `Bearer ${t}` } }
+        const res = await apiFetch(
+          `${API_JOBS}${params.toString() ? `?${params}` : ""}`
         );
-        if (res.status === 401 || res.status === 403) {
-          localStorage.removeItem("accessToken");
-          navigate("/login");
-          return;
-        }
         const data = await res.json();
         if (res.ok) {
           setJobs(data.jobs);
@@ -185,12 +177,9 @@ export default function Dashboard() {
 
   // ── Fetch upcoming interviews ──────────────────────────────────────────────
   const fetchUpcomingInterviews = useCallback(async () => {
-    const t = token();
-    if (!t) return;
+    if (!localStorage.getItem("accessToken")) return;
     try {
-      const res  = await fetch(`${API_JOBS}/upcoming-interviews`, {
-        headers: { Authorization: `Bearer ${t}` },
-      });
+      const res  = await apiFetch(`${API_JOBS}/upcoming-interviews`);
       const data = await res.json();
       if (res.ok) setUpcomingInterviews(data.jobs || []);
     } catch (err) {
@@ -202,12 +191,9 @@ export default function Dashboard() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const patchJob = async (jobId, updates) => {
-    const res = await fetch(`${API_JOBS}/${jobId}`, {
+    const res = await apiFetch(`${API_JOBS}/${jobId}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token()}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     });
     if (!res.ok) throw new Error("Failed to update job");
@@ -217,10 +203,7 @@ export default function Dashboard() {
   const handleDelete = async (jobId) => {
     if (!window.confirm("Are you sure you want to delete this job?")) return;
     try {
-      const res = await fetch(`${API_JOBS}/${jobId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token()}` },
-      });
+      const res = await apiFetch(`${API_JOBS}/${jobId}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       setJobs((prev) => prev.filter((j) => j._id !== jobId));
     } catch {

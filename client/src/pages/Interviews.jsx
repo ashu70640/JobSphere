@@ -6,6 +6,7 @@ import RescheduleModal from "../components/interview/RescheduleModal";
 import { getUrgency } from "../components/interview/InterviewCountdown";
 import AppLayout from "../components/layout/AppLayout";
 import { API_JOBS } from "../utils/api";
+import { apiFetch } from "../utils/apiFetch";
 
 const SECTION_ORDER = ["overdue", "today", "tomorrow", "week", "later"];
 const SECTION_LABELS = {
@@ -61,30 +62,17 @@ export default function Interviews() {
   const [loading,          setLoading]          = useState(true);
   const [rescheduleTarget, setRescheduleTarget] = useState(null); // job object
 
-  const token = () => localStorage.getItem("accessToken");
-
   // ── Data fetching ──────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
-    const t = token();
-    if (!t) { navigate("/login"); return; }
+    if (!localStorage.getItem("accessToken")) { navigate("/login"); return; }
 
     setLoading(true);
     try {
       const [upcomingRes, allRes] = await Promise.all([
-        fetch(`${API_JOBS}/upcoming-interviews`, {
-          headers: { Authorization: `Bearer ${t}` },
-        }),
-        fetch(`${API_JOBS}?limit=200`, {
-          headers: { Authorization: `Bearer ${t}` },
-        }),
+        apiFetch(`${API_JOBS}/upcoming-interviews`),
+        apiFetch(`${API_JOBS}?limit=200`),
       ]);
-
-      if (upcomingRes.status === 401 || allRes.status === 401) {
-        localStorage.removeItem("accessToken");
-        navigate("/login");
-        return;
-      }
 
       const [upcomingData, allData] = await Promise.all([
         upcomingRes.json(),
@@ -105,13 +93,9 @@ export default function Interviews() {
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   const patchJob = async (jobId, updates) => {
-    const t = token();
-    const res = await fetch(`${API_JOBS}/${jobId}`, {
+    const res = await apiFetch(`${API_JOBS}/${jobId}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${t}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     });
     if (!res.ok) throw new Error("Failed to update job");

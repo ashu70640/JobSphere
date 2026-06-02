@@ -5,6 +5,7 @@ import ChecklistItem from "../components/interview/ChecklistItem";
 import InterviewCountdown from "../components/interview/InterviewCountdown";
 import AppLayout from "../components/layout/AppLayout";
 import { API_JOBS } from "../utils/api";
+import { apiFetch } from "../utils/apiFetch";
 
 const STATUS_STYLES = {
   pending:   "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -222,20 +223,11 @@ const JobDetails = () => {
 
   useEffect(() => {
     const fetchJob = async () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) { navigate("/login"); return; }
+      if (!localStorage.getItem("accessToken")) { navigate("/login"); return; }
 
       try {
-        const res  = await fetch(`${API_JOBS}/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res  = await apiFetch(`${API_JOBS}/${id}`);
         const data = await res.json();
-
-        if (res.status === 401 || res.status === 403) {
-          localStorage.removeItem("accessToken");
-          navigate("/login");
-          return;
-        }
 
         if (res.ok) setJob(data.job);
         else setError(data.message || "Failed to fetch job");
@@ -249,19 +241,10 @@ const JobDetails = () => {
   }, [id, navigate]);
 
   const handleDelete = async () => {
-    const token = localStorage.getItem("accessToken");
     if (!window.confirm("Are you sure you want to delete this job?")) return;
 
     try {
-      const res = await fetch(`${API_JOBS}/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem("accessToken");
-        navigate("/login");
-        return;
-      }
+      const res = await apiFetch(`${API_JOBS}/${id}`, { method: "DELETE" });
       if (res.ok) navigate("/all-jobs");
     } catch (err) {
       console.error(err);
@@ -269,13 +252,9 @@ const JobDetails = () => {
   };
 
   const handleSummarize = async () => {
-    const token = localStorage.getItem("accessToken");
     setAiLoading(true);
     try {
-      const res  = await fetch(`${API_JOBS}/${job._id}/summarize`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res  = await apiFetch(`${API_JOBS}/${job._id}/summarize`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) { alert(data.message || "AI failed to generate summary"); return; }
       setAiSummary(data.summary);
@@ -288,12 +267,11 @@ const JobDetails = () => {
 
   const handleMatchResume = async () => {
     if (!resumeText.trim()) return;
-    const token = localStorage.getItem("accessToken");
     setMatchLoading(true);
     try {
-      const res  = await fetch(`${API_JOBS}/${job._id}/match-resume`, {
+      const res  = await apiFetch(`${API_JOBS}/${job._id}/match-resume`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resumeText }),
       });
       const data = await res.json();
@@ -308,13 +286,12 @@ const JobDetails = () => {
 
   const handleMatchPDF = async () => {
     if (!resumeFile) return;
-    const token    = localStorage.getItem("accessToken");
     const formData = new FormData();
     formData.append("resume", resumeFile);
     try {
-      const res  = await fetch(`${API_JOBS}/${job._id}/match-resume-pdf`, {
+      // Note: NO Content-Type header — browser sets multipart/form-data boundary automatically
+      const res  = await apiFetch(`${API_JOBS}/${job._id}/match-resume-pdf`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       const data = await res.json();
