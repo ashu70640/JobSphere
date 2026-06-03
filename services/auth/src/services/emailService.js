@@ -1,8 +1,11 @@
 /**
  * Email Service — Auth Service
  *
- * LOCAL DEV  → Nodemailer + Ethereal fake inbox (no config needed)
- * PRODUCTION → publishes a JSON event to SQS → Lambda picks it up → SES sends the email
+ * Priority order (first matching wins):
+ *  1. AWS SQS     → when NODE_ENV=production AND SQS_QUEUE_URL is set (AWS EC2)
+ *  2. Resend API  → when RESEND_API_KEY is set (Render / any HTTPS-only host)
+ *  3. SMTP        → when SMTP_HOST is set (custom mail server)
+ *  4. Ethereal    → fallback for local dev (no config needed)
  *
  * All functions are best-effort — errors are logged, never thrown.
  */
@@ -10,7 +13,7 @@
 import nodemailer from "nodemailer";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
-// ── SQS client (used in production only) ──────────────────────────────────────
+// ── SQS client (AWS EC2 production) ───────────────────────────────────────────
 
 const sqsClient = new SQSClient({ region: process.env.AWS_REGION || "us-east-1" });
 
@@ -23,7 +26,33 @@ async function publishToSQS(payload) {
   console.log(`📨 SQS: queued [${payload.type}] email → ${payload.to}`);
 }
 
-// ── Nodemailer transport (used in local dev) ──────────────────────────────────
+// ── Resend API (Render / HTTPS-only environments) ─────────────────────────────
+// Uses fetch over HTTPS — works even when outbound SMTP is blocked
+
+async function sendViaResend({ to, subject, html }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method:  "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type":  "application/json",
+    },
+    body: JSON.stringify({
+      from:    "JobSphere <onboarding@resend.dev>",
+      to,
+      subject,
+      html,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Resend API error ${res.status}`);
+  }
+
+  console.log(`📧 Resend: email sent → ${to}`);
+}
+
+// ── Nodemailer transport (SMTP or Ethereal) ───────────────────────────────────
 
 let transporter = null;
 
@@ -65,12 +94,20 @@ async function sendViaMail({ to, subject, html }) {
   }
 }
 
+// ── Unified send router ───────────────────────────────────────────────────────
+
+async function sendEmail({ to, subject, html }) {
+  if (process.env.RESEND_API_KEY) {
+    return sendViaResend({ to, subject, html });
+  }
+  return sendViaMail({ to, subject, html });
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function sendWelcomeEmail({ name, email }) {
   try {
     if (process.env.NODE_ENV === "production" && process.env.SQS_QUEUE_URL) {
-      // Production — publish to SQS, Lambda handles the actual send
       await publishToSQS({
         type:         "welcome",
         to:           email,
@@ -78,8 +115,7 @@ export async function sendWelcomeEmail({ name, email }) {
         dashboardUrl: process.env.CLIENT_URL || "",
       });
     } else {
-      // Local dev — send directly via Nodemailer
-      await sendViaMail({
+      await sendEmail({
         to:      email,
         subject: "Welcome to JobSphere! 🚀",
         html:    welcomeTemplate(name),
